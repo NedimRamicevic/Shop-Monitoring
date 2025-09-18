@@ -242,4 +242,5 @@ For support and questions, please contact the development team or create an issu
 - **Integration APIs**: Connect with external systems and databases
 - **Machine Learning**: Predictive analytics for repair times and capacity planning
 - **Multi-shop Support**: Manage multiple repair shop locations
-- **Advanced Scheduling**: Shift planning and resource optimization
+- **Advanced Scheduling**: Shift planning and resource optimization#   S h o p - M o n i t o r i n g  
+ 

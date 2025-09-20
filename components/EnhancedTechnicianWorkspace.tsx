@@ -639,7 +639,7 @@ export default function EnhancedTechnicianWorkspace({
                 </div>
                 {/* Assignment and action logic */}
                 <div className="flex flex-col gap-2">
-                  {scannedPart.status === 'unrepaired' && (
+                  {(scannedPart.status === 'unrepaired' || !scannedPart.repairStarted) && (
                     <>
                       {(!scannedPart.assignedTechnician || scannedPart.assignedTechnician === technician.id) ? (
                         <button

@@ -1,4 +1,4 @@
-// File: C:\Users\Administrator\Desktop\Nedim\Cursor\FirstProject\app\layout.tsx
+// File: C:\Users\Administrator\Desktop\Nedim\Cursor\Repair Shop Monitoring\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

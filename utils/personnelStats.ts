@@ -1,5 +1,5 @@
 import { Part, PersonnelStats, Technician, PartPerformanceDetail } from '@/types';
-import { technicians } from '@/data/mockData';
+import { technicians } from '@/data/enhancedMockData';
 
 export const calculatePersonnelStats = (parts: Part[]): PersonnelStats[] => {
   return technicians.map(technician => {
@@ -81,10 +81,12 @@ export const calculatePersonnelStats = (parts: Part[]): PersonnelStats[] => {
 export const getTopPerformers = (stats: PersonnelStats[], metric: keyof PersonnelStats, limit: number = 3): PersonnelStats[] => {
   return [...stats]
     .sort((a, b) => {
+      const aValue = Number(a[metric]);
+      const bValue = Number(b[metric]);
       if (metric === 'averageRepairTime') {
-        return a[metric] - b[metric]; // Lower is better for repair time
+        return aValue - bValue; // Lower is better for repair time
       }
-      return b[metric] - a[metric]; // Higher is better for other metrics
+      return bValue - aValue; // Higher is better for other metrics
     })
     .slice(0, limit);
 };

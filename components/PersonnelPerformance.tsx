@@ -63,7 +63,7 @@ export default function PersonnelPerformance() {
 
   // Performance alerts
   const alerts = useMemo(() => {
-    const alertsList = [];
+    const alertsList: { type: string; message: string; technician: string }[] = [];
     
     technicians.forEach(tech => {
       if (tech.stats.scrapRate > 10) {
@@ -209,10 +209,14 @@ export default function PersonnelPerformance() {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar 
-                dataKey={selectedMetric} 
-                fill={(entry) => getMetricColor(entry[selectedMetric], selectedMetric)}
-              />
+              <Bar dataKey={selectedMetric}>
+                {performanceData.map((entry, index) => {
+                  const value = selectedMetric === 'repairTime' ? entry.avgRepairTime : entry[selectedMetric];
+                  return (
+                    <Cell key={`cell-${index}`} fill={getMetricColor(value, selectedMetric)} />
+                  );
+                })}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

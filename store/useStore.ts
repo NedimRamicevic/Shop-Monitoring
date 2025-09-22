@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Part, Technician, Manager, Inspector, User, Notification, PartHistoryEntry } from '@/types';
+import { Part, Technician, Manager, Inspector, User, Notification, PartHistoryEntry, InventoryItem } from '@/types';
 import { initialParts, technicians, managers } from '@/data/enhancedMockData';
 
 interface AppState {
@@ -11,6 +11,8 @@ interface AppState {
   technicians: Technician[];
   managers: Manager[];
   notifications: Notification[];
+
+  inventory: InventoryItem[];
   
   // UI state
   currentScreen: string;
@@ -36,6 +38,10 @@ interface AppState {
   // Bulk operations
   bulkAssignParts: (partIds: string[], technicianId: string) => void;
   bulkUpdateStatus: (partIds: string[], status: Part['status']) => void;
+
+  // Inventory actions
+  addInventoryItem: (item: InventoryItem) => void;
+  updateInventoryItem: (itemId: string, updates: Partial<InventoryItem>) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -46,7 +52,7 @@ export const useStore = create<AppState>((set, get) => ({
   managers: managers,
   notifications: [],
   currentScreen: 'login',
-  
+  inventory: [],
   // Actions
   setCurrentUser: (user) => set({ currentUser: user }),
   setCurrentScreen: (screen) => set({ currentScreen: screen }),
@@ -82,21 +88,31 @@ export const useStore = create<AppState>((set, get) => ({
       )
     }));
   },
-  
+  // Inventory actions
+  addInventoryItem: (item) => {
+    set((state) => ({
+      inventory: [...state.inventory, item]
+    }));
+  },
+  updateInventoryItem: (itemId, updates) => {
+    set((state) => ({
+      inventory: state.inventory.map(item =>
+        item.id === itemId ? { ...item, ...updates } : item
+      )
+    }));
+  },
+
   addPartNote: (partId, note, technicianId) => {
     const technician = get().technicians.find(t => t.id === technicianId);
     const timestamp = new Date().toISOString();
     const noteWithMetadata = `${timestamp} - ${technician?.name}: ${note}`;
-    
     set((state) => ({
-      parts: state.parts.map(part => 
-        part.id === partId 
+      parts: state.parts.map(part =>
+        part.id === partId
           ? { ...part, notes: [...part.notes, noteWithMetadata] }
           : part
       )
     }));
-    
-    // Add to history
     get().addPartHistory(partId, {
       timestamp,
       action: 'Note added',

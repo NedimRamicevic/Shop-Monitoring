@@ -60,23 +60,19 @@ export default function InspectorDashboard({ inspector, parts, onLogout, onRegis
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {parts.map((part: Part) => (
+              {parts.filter((part: Part) => part.status === 'repaired' || part.status === 'scrap').map((part: Part) => (
                 <tr key={part.id}>
                   <td className="px-4 py-2 font-medium text-gray-900">{part.partNumber}</td>
                   <td className="px-4 py-2 capitalize text-xs text-gray-700">{part.status.replace('-', ' ')}</td>
                   <td className="px-4 py-2 flex gap-2">
-                    <button
-                      className="btn-primary flex items-center text-xs px-2 py-1 rounded"
-                      onClick={() => onUpdatePart(part.id, { status: 'shipped' })}
-                    >
-                      Send
-                    </button>
-                    <button
-                      className="btn-danger flex items-center text-xs px-2 py-1 rounded"
-                      onClick={() => onUpdatePart(part.id, { status: 'scrap' })}
-                    >
-                      Scrap
-                    </button>
+                    {part.status === 'repaired' && (
+                      <button
+                        className="btn-primary flex items-center text-xs px-2 py-1 rounded"
+                        onClick={() => onUpdatePart(part.id, { status: 'shipped' })}
+                      >
+                        Send
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

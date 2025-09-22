@@ -34,60 +34,67 @@ import {
 
 export default function ShopAnalytics() {
   const { parts, technicians } = useStore();
-
-  // Calculate shop analytics
-  const analytics = useMemo(() => {
+  type AnalyticsType = {
+    totalParts: number;
+    completedToday: number;
+    overdueRepairs: number;
+    mttr: number;
+    scrapRate: number;
+    shippedRate: number;
+    backlogTrend: Array<{ date: string; count: number }>;
+    workloadDistribution: Array<{ technician: string; workload: number }>;
+    productivity: Array<{ technician: string; repaired: number; avgRepairTime: number }>;
+    bottlenecks: string[];
+  };
+  const analytics: AnalyticsType = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
     const completedToday = parts.filter(p => {
       if (!p.repairCompleted) return false;
       const completedDate = new Date(p.repairCompleted);
       return completedDate >= todayStart;
     }).length;
-
     const overdueRepairs = parts.filter(p => p.isOverdue).length;
-
-    // Calculate MTTR (Mean Time to Repair)
     const completedParts = parts.filter(p => p.repairStarted && p.repairCompleted);
     const totalRepairTime = completedParts.reduce((sum, part) => {
       const start = new Date(part.repairStarted!).getTime();
       const end = new Date(part.repairCompleted!).getTime();
-      return sum + (end - start) / (1000 * 60 * 60); // Convert to hours
+      return sum + (end - start) / (1000 * 60 * 60);
     }, 0);
     const mttr = completedParts.length > 0 ? totalRepairTime / completedParts.length : 0;
-
-    // Calculate scrap and shipped rates
     const totalProcessed = parts.filter(p => p.status === 'repaired' || p.status === 'shipped' || p.status === 'scrap').length;
     const scrapRate = totalProcessed > 0 ? (parts.filter(p => p.status === 'scrap').length / totalProcessed) * 100 : 0;
     const shippedRate = totalProcessed > 0 ? (parts.filter(p => p.status === 'shipped').length / totalProcessed) * 100 : 0;
-
-    // Generate backlog trend (last 7 days)
     const backlogTrend = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
       const dateStr = date.toISOString().split('T')[0];
-      
-      // Count parts that were unrepaired on this date
       const count = parts.filter(p => {
         const enteredDate = new Date(p.enteredShop);
-        return enteredDate <= date && (p.status === 'unrepaired' || 
-          (p.repairStarted && new Date(p.repairStarted) > date));
+        return enteredDate <= date && (p.status === 'unrepaired' || (p.repairStarted && new Date(p.repairStarted) > date));
       }).length;
-      
       return { date: dateStr, count };
     });
-
-    // Workload distribution
     const workloadDistribution = technicians.map(tech => {
       const assignedParts = parts.filter(p => p.assignedTechnician === tech.id && p.status === 'in-repair');
       const totalHours = assignedParts.reduce((sum, part) => sum + (part.estimatedHours || 0), 0);
-      return {
-        technician: tech.name,
-        workload: totalHours
-      };
+      return { technician: tech.name, workload: totalHours };
     });
-
+    const productivity = technicians.map(tech => {
+      const repaired = parts.filter(p => p.assignedTechnician === tech.id && p.status === 'repaired').length;
+      const avgRepairTime = (() => {
+        const completed = parts.filter(p => p.assignedTechnician === tech.id && p.repairStarted && p.repairCompleted);
+        if (completed.length === 0) return 0;
+        const totalTime = completed.reduce((sum, part) => {
+          const start = new Date(part.repairStarted!).getTime();
+          const end = new Date(part.repairCompleted!).getTime();
+          return sum + (end - start) / (1000 * 60 * 60);
+        }, 0);
+        return Math.round((totalTime / completed.length) * 10) / 10;
+      })();
+      return { technician: tech.name, repaired, avgRepairTime };
+    });
+    const bottlenecks = productivity.filter(p => p.repaired < 2 || p.avgRepairTime > mttr * 1.5).map(p => p.technician);
     return {
       totalParts: parts.length,
       completedToday,
@@ -96,9 +103,18 @@ export default function ShopAnalytics() {
       scrapRate: Math.round(scrapRate * 10) / 10,
       shippedRate: Math.round(shippedRate * 10) / 10,
       backlogTrend,
-      workloadDistribution
+      workloadDistribution,
+      productivity,
+      bottlenecks
     };
   }, [parts, technicians]);
+
+  // Dummy AI-based forecasting logic
+  const forecastRepairTime = analytics.mttr ? Math.round((analytics.mttr * (1 + Math.random() * 0.1 - 0.05)) * 10) / 10 : 0;
+  const forecastWorkload: { technician: string; forecast: number }[] = analytics.workloadDistribution ? analytics.workloadDistribution.map(w => ({
+    technician: w.technician,
+    forecast: Math.round((w.workload * (1 + Math.random() * 0.2 - 0.1)) * 10) / 10
+  })) : [];
 
   // Status distribution for pie chart
   const statusDistribution = useMemo(() => {
@@ -247,6 +263,70 @@ export default function ShopAnalytics() {
       </div>
 
       {/* Charts Row 2 */}
+      {/* Technician Productivity & Bottlenecks */}
+      {/* AI-based Forecasting */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Forecast: Next Week's Avg Repair Time</h3>
+          <div className="text-2xl font-bold text-blue-600">{forecastRepairTime}h</div>
+          <div className="text-xs text-gray-500 mt-2">(Dummy AI logic for demo)</div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Forecast: Technician Workload</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2 text-left">Technician</th>
+                <th className="py-2 text-left">Forecast Workload (h)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {forecastWorkload.map(row => (
+                <tr key={row.technician} className="border-b">
+                  <td className="py-2">{row.technician}</td>
+                  <td className="py-2">{row.forecast}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="text-xs text-gray-500 mt-2">(Dummy AI logic for demo)</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Technician Productivity</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2 text-left">Technician</th>
+                <th className="py-2 text-left">Repaired</th>
+                <th className="py-2 text-left">Avg Repair Time (h)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {analytics.productivity.map(row => (
+                <tr key={row.technician} className="border-b">
+                  <td className="py-2">{row.technician}</td>
+                  <td className="py-2">{row.repaired}</td>
+                  <td className="py-2">{row.avgRepairTime}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Bottleneck Detection</h3>
+          {analytics.bottlenecks.length > 0 ? (
+            <ul className="list-disc pl-6">
+              {analytics.bottlenecks.map(name => (
+                <li key={name} className="text-red-600 font-semibold">{name}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-green-600">No bottlenecks detected.</div>
+          )}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Status Distribution */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">

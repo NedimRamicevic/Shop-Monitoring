@@ -142,6 +142,14 @@ export interface Notification {
   partId?: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  location: string;
+  partId?: string;
+}
+
 export interface ShopAnalytics {
   totalParts: number;
   completedToday: number;
